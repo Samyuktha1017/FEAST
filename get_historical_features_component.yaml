@@ -1,19 +1,9 @@
-name: Feast - Get Historical Features
+name: Feast - Get Historical Features (Mocked)
 description: |-
-  Extract historical features using Feast and save them to a CSV.
+  Generates mock historical features and saves to CSV.
+  (Feast repo skipped due to Elyra limitations)
 
-  Inputs:
-    repo_path: Path to the Feast feature repository.
-    output_csv_path: Output CSV file to store the features.
-
-  Outputs:
-    historical_features: CSV file with features.
-
-  Annotations:
-    author: Sam Yu <your_email@domain.com>
-
-inputs:
-  - {name: repo_path, type: String}
+inputs: []
 outputs:
   - {name: historical_features, type: CSV}
 
@@ -24,8 +14,8 @@ implementation:
       - sh
       - -c
       - |
-        (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet feast pandas || \
-         PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet feast pandas --user) && "$0" "$@"
+        (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas || \
+         PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas --user) && "$0" "$@"
       - python3
       - -u
       - -c
@@ -35,38 +25,25 @@ implementation:
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
             return file_path
 
-        def get_historical_features(repo_path: str, output_csv_path: str):
-            from feast import FeatureStore
+        def generate_mock_features(output_csv_path: str):
             import pandas as pd
 
-            store = FeatureStore(repo_path=repo_path)
-            entity_df = pd.DataFrame.from_dict({
-                "student_id": [1, 2, 3, 4],
-                "event_timestamp": pd.to_datetime(["2025-07-16"] * 4)
+            # Manually defined feature values
+            df = pd.DataFrame({
+                "hours_studied": [4, 3, 5, 2],
+                "attendance_percentage": [80, 70, 90, 60]
             })
 
-            features = store.get_historical_features(
-                entity_df=entity_df,
-                features=[
-                    "student_features:hours_studied",
-                    "student_features:attendance_percentage"
-                ]
-            )
-
-            df = features.to_df()
             df.to_csv(output_csv_path, index=False)
-            print("✅ Features saved to", output_csv_path)
+            print("✅ Mock features saved to", output_csv_path)
 
         import argparse
-        _parser = argparse.ArgumentParser(prog='Feast - Get Historical Features')
-        _parser.add_argument('--repo-path', type=str, required=True)
+        _parser = argparse.ArgumentParser(prog='Mocked Feast Feature Generator')
         _parser.add_argument('--historical-features', dest='output_csv_path',
                              type=_make_parent_dirs_and_return_path, required=True)
         _args = _parser.parse_args()
-        get_historical_features(repo_path=_args.repo_path, output_csv_path=_args.output_csv_path)
+        generate_mock_features(output_csv_path=_args.output_csv_path)
 
     args:
-      - --repo-path
-      - {inputValue: repo_path}
       - --historical-features
       - {outputPath: historical_features}
