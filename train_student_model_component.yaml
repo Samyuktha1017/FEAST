@@ -4,7 +4,7 @@ description: |-
 
   Inputs:
     historical_features: CSV file with feature columns.
-  
+
   Outputs:
     model: Trained model pickle file.
 
@@ -23,8 +23,8 @@ implementation:
       - sh
       - -c
       - |
-        (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn || \
-         PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn --user) && "$0" "$@"
+        (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn feast || \
+         PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn feast --user) && "$0" "$@"
       - python3
       - -u
       - -c
@@ -41,6 +41,8 @@ implementation:
             import pickle
 
             df = pd.read_csv(historical_features_path)
+
+            # Encode labels – here assumed dummy values for illustration
             df["label"] = LabelEncoder().fit_transform(["pass", "fail", "pass", "fail"])
 
             X = df[["hours_studied", "attendance_percentage"]]
