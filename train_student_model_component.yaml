@@ -1,138 +1,44 @@
 name: Train Student Pass/Fail Model
-description: |-
-  Train a RandomForest model on historical student features and save it as a pickle file.
-
-  Inputs:
-    historical_features: CSV file with feature columns.
-
-  Outputs:
-    model: Trained model pickle file.
-
-  Annotations:
-    author: Sam Yu <your_email@domain.com>
-
+description: Train a RandomForest model using historical features CSV and output a model pickle file
 inputs:
-  - {name: historical_features, type: String}
+  - {name: Historical Features, type: CSV}
+  - {name: Output Path Prefix, type: String}
 outputs:
-  - {name: model, type: Model}
-
+  - {name: Model, type: Model}
+metadata:
+  annotations:
+    author: Sam Yu <your_email@domain.com>
 implementation:
   container:
     image: python:3.10
     command:
       - sh
+      - -ex
       - -c
       - |
-        (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn || \
-         PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn --user) && "$0" "$@"
-      - python3
-      - -u
-      - -c
-      - |
-        def _make_parent_dirs_and_return_path(file_path: str):
-            import os
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            return file_path
+          (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn || \
+           PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn --user)
+          python3 -u -c "
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
+import pickle
+import os
 
-        def train_model(historical_features_path: str, model_output_path: str):
-            import pandas as pd
-            from sklearn.ensemble import RandomForestClassifier
-            from sklearn.preprocessing import LabelEncoder
-            import pickle
+df = pd.read_csv('${0}')
+df['label'] = LabelEncoder().fit_transform(['pass', 'fail', 'pass', 'fail'])
+X = df[['hours_studied', 'attendance_percentage']]
+y = df['label']
 
-            df = pd.read_csv(historical_features_path)
+model = RandomForestClassifier()
+model.fit(X, y)
 
-            # Encode dummy labels (you can later change to real 'pass/fail' labels)
-            df["label"] = LabelEncoder().fit_transform(["pass", "fail", "pass", "fail"])
-
-            X = df[["hours_studied", "attendance_percentage"]]
-            y = df["label"]
-
-            model = RandomForestClassifier()
-            model.fit(X, y)
-
-            with open(model_output_path, "wb") as f:
-                pickle.dump(model, f)
-
-            print(" Model trained and saved to", model_output_path)
-
-        import argparse
-        _parser = argparse.ArgumentParser()
-        _parser.add_argument('--historical-features', dest='historical_features_path', type=str, required=True)
-        _parser.add_argument('--model', dest='model_output_path', type=_make_parent_dirs_and_return_path, required=True)
-        _args = _parser.parse_args()
-        train_model(_args.historical_features_path, _args.model_output_path)
-    args:
-      - --historical-features
-      - {inputPath: historical_features}
-      - --model
-      - {outputPath: model}
-name: Train Student Pass/Fail Model
-description: |-
-  Train a RandomForest model on historical student features and save it as a pickle file.
-
-  Inputs:
-    historical_features: CSV file with feature columns.
-
-  Outputs:
-    model: Trained model pickle file.
-
-  Annotations:
-    author: Sam Yu <your_email@domain.com>
-
-inputs:
-  - {name: historical_features, type: String}
-outputs:
-  - {name: model, type: Model}
-
-implementation:
-  container:
-    image: python:3.10
-    command:
-      - sh
-      - -c
-      - |
-        (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn || \
-         PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn --user) && "$0" "$@"
-      - python3
-      - -u
-      - -c
-      - |
-        def _make_parent_dirs_and_return_path(file_path: str):
-            import os
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            return file_path
-
-        def train_model(historical_features_path: str, model_output_path: str):
-            import pandas as pd
-            from sklearn.ensemble import RandomForestClassifier
-            from sklearn.preprocessing import LabelEncoder
-            import pickle
-
-            df = pd.read_csv(historical_features_path)
-
-            # Encode dummy labels (you can later change to real 'pass/fail' labels)
-            df["label"] = LabelEncoder().fit_transform(["pass", "fail", "pass", "fail"])
-
-            X = df[["hours_studied", "attendance_percentage"]]
-            y = df["label"]
-
-            model = RandomForestClassifier()
-            model.fit(X, y)
-
-            with open(model_output_path, "wb") as f:
-                pickle.dump(model, f)
-
-            print(" Model trained and saved to", model_output_path)
-
-        import argparse
-        _parser = argparse.ArgumentParser()
-        _parser.add_argument('--historical-features', dest='historical_features_path', type=str, required=True)
-        _parser.add_argument('--model', dest='model_output_path', type=_make_parent_dirs_and_return_path, required=True)
-        _args = _parser.parse_args()
-        train_model(_args.historical_features_path, _args.model_output_path)
-    args:
-  - --historical-features
-  - {inputPath: historical_features}
-      - --model
-      - {outputPath: model}
+output_path = '${1}/student_model.pkl'
+os.makedirs(os.path.dirname(output_path), exist_ok=True)
+with open(output_path, 'wb') as f:
+    pickle.dump(model, f)
+print('✅ Model trained and saved to:', output_path)
+          "
+      - inputPath: Historical Features
+      - inputValue: Output Path Prefix
+      - outputPath: Model
