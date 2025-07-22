@@ -1,27 +1,21 @@
-name: Get Features with Feast
-description: Retrieves historical features using Feast from entity data CSV
+name: Get Historical Features from Feast
+description: Retrieve historical features using Feast and save them as a CSV
 inputs:
-  - name: entity_csv
-    type: String
-  - name: feature_view_name
-    type: String
-  - name: repo_path
-    type: String
+  - {name: entity_csv, type: String}
+  - {name: feature_view_name, type: String}
+  - {name: repo_path, type: String}
 outputs:
-  - name: features_csv
-    type: String
+  - {name: features_csv, type: Csv}
 implementation:
   container:
     image: python:3.9
     command:
-      - python3
-      - get_features.py
-    args:
-      - --entity_csv
-      - {inputValue: entity_csv}
-      - --feature_view_name
-      - {inputValue: feature_view_name}
-      - --repo_path
-      - {inputValue: repo_path}
-      - --output_path
-      - {outputValue: features_csv}
+      - sh
+      - -c
+      - |
+        pip install --quiet feast pandas && \
+        python3 get_features.py \
+          --entity_csv {inputValue: entity_csv} \
+          --feature_view_name {inputValue: feature_view_name} \
+          --repo_path {inputValue: repo_path} \
+          --output_path {outputPath: features_csv}
