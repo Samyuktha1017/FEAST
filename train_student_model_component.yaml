@@ -81,7 +81,7 @@ description: |-
     author: Sam Yu <your_email@domain.com>
 
 inputs:
-  - {name: historical_features, type: CSV}
+  - {name: historical_features, type: String}
 outputs:
   - {name: model, type: Model}
 
