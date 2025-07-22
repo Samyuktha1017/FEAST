@@ -54,7 +54,7 @@ implementation:
             with open(model_output_path, "wb") as f:
                 pickle.dump(model, f)
 
-            print("✅ Model trained and saved to", model_output_path)
+            print(" Model trained and saved to", model_output_path)
 
         import argparse
         _parser = argparse.ArgumentParser()
@@ -123,7 +123,7 @@ implementation:
             with open(model_output_path, "wb") as f:
                 pickle.dump(model, f)
 
-            print("✅ Model trained and saved to", model_output_path)
+            print(" Model trained and saved to", model_output_path)
 
         import argparse
         _parser = argparse.ArgumentParser()
