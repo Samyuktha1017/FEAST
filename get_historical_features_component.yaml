@@ -1,43 +1,48 @@
 name: Get Historical Features
-description: Retrieve historical features from Feast and save as a CSV file
+description: Retrieve historical features from Feast and save as a CSV file at a user-specified path
 inputs:
-  - {name: Entity IDs, type: String}
-  - {name: Feature Service Name, type: String}
-  - {name: Output Path Prefix, type: String}
+  - {name: entity_ids, type: String}
+  - {name: feature_service_name, type: String}
+  - {name: output_csv_path, type: String}
 outputs:
-  - {name: Historical Features, type: CSV}
-metadata:
-  annotations:
-    author: Sam Yu <your_email@domain.com>
+  - {name: historical_features, type: CSV}
 implementation:
   container:
     image: python:3.10
     command:
       - sh
-      - -ex
       - -c
       - |
-          (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet feast pandas || \
-           PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet feast pandas --user)
-          python3 -u -c "
-import os
-import pandas as pd
-from feast import FeatureStore
+        (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'feast' 'pandas' || \
+         PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'feast' 'pandas' --user) && "$0" "$@"
+      - python3
+      - -u
+      - -c
+      - |
+        import argparse
+        import os
+        import pandas as pd
+        from feast import FeatureStore
 
-store = FeatureStore(repo_path='.')
-entity_ids = '${0}'.split(',')  # Assume comma-separated student IDs
-feature_service = store.get_feature_service(name='${1}')
-df = store.get_historical_features(
-    entity_df=pd.DataFrame({'student_id': entity_ids}),
-    features=feature_service
-).to_df()
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--entity_ids", type=str, required=True)
+        parser.add_argument("--feature_service_name", type=str, required=True)
+        parser.add_argument("--output_csv_path", type=str, required=True)
+        args = parser.parse_args()
 
-output_path = '${2}/historical_features.csv'
-os.makedirs(os.path.dirname(output_path), exist_ok=True)
-df.to_csv(output_path, index=False)
-print('✅ Historical features saved to:', output_path)
-          "
-      - inputValue: Entity IDs
-      - inputValue: Feature Service Name
-      - inputValue: Output Path Prefix
-      - outputPath: Historical Features
+        store = FeatureStore(repo_path=".")
+        ids = args.entity_ids.split(',')
+        entity_df = pd.DataFrame({"student_id": ids})
+        feature_service = store.get_feature_service(args.feature_service_name)
+        df = store.get_historical_features(entity_df=entity_df, features=feature_service).to_df()
+
+        os.makedirs(os.path.dirname(args.output_csv_path), exist_ok=True)
+        df.to_csv(args.output_csv_path, index=False)
+        print("✅ Historical features written to:", args.output_csv_path)
+    args:
+      - --entity_ids
+      - {inputValue: entity_ids}
+      - --feature_service_name
+      - {inputValue: feature_service_name}
+      - --output_csv_path
+      - {inputValue: output_csv_path}
