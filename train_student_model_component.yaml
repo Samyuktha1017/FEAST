@@ -1,44 +1,56 @@
-name: Train Student Pass/Fail Model
-description: Train a RandomForest model using historical features CSV and output a model pickle file
+name: Train Random Forest Model
+description: Trains a Random Forest classifier using training data and saves the model to a user-specified path.
 inputs:
-  - {name: Historical Features, type: CSV}
-  - {name: Output Path Prefix, type: String}
+  - {name: X_train, type: String}
+  - {name: y_train, type: String}
+  - {name: model_output_path, type: String}
 outputs:
-  - {name: Model, type: Model}
-metadata:
-  annotations:
-    author: Sam Yu <your_email@domain.com>
+  - {name: trained_model, type: Model}
 implementation:
   container:
-    image: python:3.10
+    image: python:3.9
     command:
       - sh
-      - -ex
       - -c
       - |
-          (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn || \
-           PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet pandas scikit-learn --user)
-          python3 -u -c "
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
-import pickle
-import os
+        (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'pandas==2.2.2' 'scikit-learn' 'joblib' || \
+         PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'pandas==2.2.2' 'scikit-learn' 'joblib' --user) && "$0" "$@"
+      - python3
+      - -u
+      - -c
+      - |
+        import argparse
+        import json
+        import os
+        import pandas as pd
+        import joblib
+        from sklearn.ensemble import RandomForestClassifier
 
-df = pd.read_csv('${0}')
-df['label'] = LabelEncoder().fit_transform(['pass', 'fail', 'pass', 'fail'])
-X = df[['hours_studied', 'attendance_percentage']]
-y = df['label']
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--X_train", type=str, required=True)
+        parser.add_argument("--y_train", type=str, required=True)
+        parser.add_argument("--model_output_path", type=str, required=True)
+        args = parser.parse_args()
 
-model = RandomForestClassifier()
-model.fit(X, y)
+        # Load training data
+        with open(args.X_train, "r") as f:
+            X = pd.DataFrame(json.load(f))
 
-output_path = '${1}/student_model.pkl'
-os.makedirs(os.path.dirname(output_path), exist_ok=True)
-with open(output_path, 'wb') as f:
-    pickle.dump(model, f)
-print('✅ Model trained and saved to:', output_path)
-          "
-      - inputPath: Historical Features
-      - inputValue: Output Path Prefix
-      - outputPath: Model
+        with open(args.y_train, "r") as f:
+            y = json.load(f)
+
+        # Train model
+        model = RandomForestClassifier(random_state=42)
+        model.fit(X, y)
+
+        # Save model
+        os.makedirs(os.path.dirname(args.model_output_path), exist_ok=True)
+        joblib.dump(model, args.model_output_path)
+        print("✅ Model saved to:", args.model_output_path)
+    args:
+      - --X_train
+      - {inputValue: X_train}
+      - --y_train
+      - {inputValue: y_train}
+      - --model_output_path
+      - {inputValue: model_output_path}
