@@ -30,19 +30,19 @@ implementation:
 
         os.makedirs(os.path.dirname(args.historical_features_path), exist_ok=True)
 
-        print(f"📄 Reading entity data from {args.entity_data_path}")
+        print(f" Reading entity data from {args.entity_data_path}")
         entity_df = pd.read_csv(args.entity_data_path, parse_dates=["event_timestamp"])
 
-        print(f"🧠 Loading Feast FeatureStore from: {args.repo_path}")
+        print(f" Loading Feast FeatureStore from: {args.repo_path}")
         store = FeatureStore(repo_path=args.repo_path)
 
-        print(f"🔗 Getting features from: {args.feature_view_name}")
+        print(f" Getting features from: {args.feature_view_name}")
         feature_refs = [f"{args.feature_view_name}:{f.name}" for f in store.get_feature_view(args.feature_view_name).features]
 
         df = store.get_historical_features(entity_df=entity_df, features=feature_refs).to_df()
 
         df.to_csv(args.historical_features_path, index=False)
-        print(f"✅ Historical features saved to {args.historical_features_path}")
+        print(f" Historical features saved to {args.historical_features_path}")
       - --entity_data_path
       - {inputValue: entity_data_path}
       - --feature_view_name
