@@ -133,6 +133,6 @@ implementation:
         train_model(_args.historical_features_path, _args.model_output_path)
     args:
   - --historical-features
-  - {inputValue: historical_features}
+  - {inputPath: historical_features}
       - --model
       - {outputPath: model}
