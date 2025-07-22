@@ -12,7 +12,7 @@ description: |-
     author: Sam Yu <your_email@domain.com>
 
 inputs:
-  - {name: historical_features, type: CSV}
+  - {name: historical_features, type: String}
 outputs:
   - {name: model, type: Model}
 
@@ -132,7 +132,7 @@ implementation:
         _args = _parser.parse_args()
         train_model(_args.historical_features_path, _args.model_output_path)
     args:
-      - --historical-features
-      - {inputPath: historical_features}
+  - --historical-features
+  - {inputValue: historical_features}
       - --model
       - {outputPath: model}
