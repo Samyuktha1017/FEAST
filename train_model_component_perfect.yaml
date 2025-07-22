@@ -1,0 +1,15 @@
+name: Train Random Forest Model
+description: Train a Random Forest model using features retrieved from Feast
+inputs:
+  - {name: features_csv, type: Csv}
+  - {name: label_column, type: String}
+outputs:
+  - {name: model_file, type: Model}
+implementation:
+  container:
+    image: python:3.9
+    command:
+      - sh
+      - -c
+      - |
+        pip install --quiet pandas scikit-learn joblib &&         python3 train_model.py           --features_csv {inputPath: features_csv}           --label_column {inputValue: label_column}           --model_output {outputPath: model_file}
