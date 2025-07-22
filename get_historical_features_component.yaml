@@ -17,14 +17,14 @@ implementation:
       - -c
       - |
         import os
-        import pandas as pd
         import argparse
+        import pandas as pd
         from feast import FeatureStore
 
         parser = argparse.ArgumentParser()
         parser.add_argument('--entity_data_path', type=str, required=True)
         parser.add_argument('--feature_view_name', type=str, required=True)
-        parser.add_argument('--repo_path', type=str, required=True)
+        parser.add_argument('--repo_path', type=str, default='feature_repo')
         parser.add_argument('--historical_features_path', type=str, required=True)
         args = parser.parse_args()
 
@@ -38,6 +38,7 @@ implementation:
 
         print(f"🔗 Getting features from: {args.feature_view_name}")
         feature_refs = [f"{args.feature_view_name}:{f.name}" for f in store.get_feature_view(args.feature_view_name).features]
+
         df = store.get_historical_features(entity_df=entity_df, features=feature_refs).to_df()
 
         df.to_csv(args.historical_features_path, index=False)
