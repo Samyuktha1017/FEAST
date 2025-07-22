@@ -5,6 +5,7 @@ inputs:
   - {name: entity_data_path,   type: String, description: 'Path to entity data CSV (must include event_timestamp)'}
   - {name: feature_view_name,  type: String, default: 'student_feature_view', description: 'Feast feature view to use'}
   - {name: repo_path,          type: String, default: 'feature_repo', description: 'Path to mounted Feast repo'}
+  - {name: historical_features_path, type: String, description: 'Path to write retrieved historical features as CSV'}
 
 outputs:
   - {name: historical_features_path, type: String, description: 'Path to write retrieved historical features as CSV'}
@@ -13,9 +14,9 @@ implementation:
   container:
     image: python:3.10
     command: [python]
-    args: [
-      -c,
-      |
+    args:
+      - -c
+      - |
         import os
         import argparse
         import pandas as pd
@@ -43,4 +44,12 @@ implementation:
 
         df.to_csv(args.historical_features_path, index=False)
         print(f"✅ Historical features saved to {args.historical_features_path}")
-    ]
+    args:
+      - --entity_data_path
+      - {inputValue: entity_data_path}
+      - --feature_view_name
+      - {inputValue: feature_view_name}
+      - --repo_path
+      - {inputValue: repo_path}
+      - --historical_features_path
+      - {outputPath: historical_features_path}
