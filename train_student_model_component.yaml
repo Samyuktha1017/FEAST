@@ -1,11 +1,11 @@
 name: Train Random Forest Model
-description: Trains a Random Forest classifier using training data and saves the model to a user-specified path.
+description: Train a Random Forest model using features CSV and save the model
 inputs:
-  - {name: X_train, type: String}
-  - {name: y_train, type: String}
-  - {name: model_output_path, type: String}
+  - {name: features_csv, type: Csv}
+  - {name: label_column, type: String}
+  - {name: model_output, type: String}
 outputs:
-  - {name: trained_model, type: Model}
+  - {name: model_file, type: Model}
 implementation:
   container:
     image: python:3.9
@@ -13,44 +13,8 @@ implementation:
       - sh
       - -c
       - |
-        (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'pandas==2.2.2' 'scikit-learn' 'joblib' || \
-         PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location 'pandas==2.2.2' 'scikit-learn' 'joblib' --user) && "$0" "$@"
-      - python3
-      - -u
-      - -c
-      - |
-        import argparse
-        import json
-        import os
-        import pandas as pd
-        import joblib
-        from sklearn.ensemble import RandomForestClassifier
-
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--X_train", type=str, required=True)
-        parser.add_argument("--y_train", type=str, required=True)
-        parser.add_argument("--model_output_path", type=str, required=True)
-        args = parser.parse_args()
-
-        # Load training data
-        with open(args.X_train, "r") as f:
-            X = pd.DataFrame(json.load(f))
-
-        with open(args.y_train, "r") as f:
-            y = json.load(f)
-
-        # Train model
-        model = RandomForestClassifier(random_state=42)
-        model.fit(X, y)
-
-        # Save model
-        os.makedirs(os.path.dirname(args.model_output_path), exist_ok=True)
-        joblib.dump(model, args.model_output_path)
-        print("✅ Model saved to:", args.model_output_path)
-    args:
-      - --X_train
-      - {inputValue: X_train}
-      - --y_train
-      - {inputValue: y_train}
-      - --model_output_path
-      - {inputValue: model_output_path}
+        pip install --quiet pandas scikit-learn joblib && \
+        python3 train_model.py \
+          --features_csv {inputPath: features_csv} \
+          --label_column {inputValue: label_column} \
+          --model_output {outputPath: model_file}
