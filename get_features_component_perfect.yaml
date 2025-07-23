@@ -8,7 +8,7 @@ outputs:
   - {name: features_csv, type: Csv}
 implementation:
   container:
-    image: python:3.9
+    image: samyukthagudiya17/feast-brick:latest
     command:
       - sh
       - -c
